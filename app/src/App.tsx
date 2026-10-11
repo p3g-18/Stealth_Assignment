@@ -1,5 +1,7 @@
+import { AgentFilter } from './components/AgentFilter';
 import { EventList } from './components/EventList';
 import { SearchBox } from './components/SearchBox';
+import { StatusFilter } from './components/StatusFilter';
 import { useFilters } from './lib/useFilters';
 
 export default function App() {
@@ -17,6 +19,11 @@ export default function App() {
             setFilters({ ...filters, q: q || undefined }, { replace: Boolean(filters.q) && Boolean(q) })
           }
         />
+        <AgentFilter
+          selected={filters.agents ?? []}
+          onChange={(agents) => setFilters({ ...filters, agents })}
+        />
+        <StatusFilter value={filters.status} onChange={(status) => setFilters({ ...filters, status })} />
       </div>
 
       <EventList filters={filters} />
