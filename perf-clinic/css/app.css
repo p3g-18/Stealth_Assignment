@@ -287,6 +287,8 @@ main {
 
 .row-preview {
   position: fixed;
+  top: 0;
+  left: 0;
   z-index: 30;
   max-width: 320px;
   padding: 8px 12px;

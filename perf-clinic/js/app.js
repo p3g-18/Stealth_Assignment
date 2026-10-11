@@ -177,18 +177,33 @@ function onScroll() {
 }
 
 function hidePreview() {
+  cancelAnimationFrame(previewFrame);
+  previewFrame = 0;
+  previewRowId = null;
   preview.hidden = true;
 }
 
+const eventsById = new Map(window.ACTIVITY.map((event) => [event.id, event]));
+let previewRowId = null;
+let previewFrame = 0;
+let pointer = { x: 0, y: 0, row: null };
+
 function showPreview(event) {
-  const row = event.target.closest('.result-row');
-  if (!row) return;
-  const item = window.ACTIVITY.find((candidate) => candidate.id === row.dataset.id);
-  if (!item) return;
-  preview.textContent = item.summary;
-  preview.style.top = event.clientY + 12 + 'px';
-  preview.style.left = event.clientX + 12 + 'px';
-  preview.hidden = false;
+  pointer = { x: event.clientX, y: event.clientY, row: event.target.closest('.result-row') };
+  if (previewFrame) return;
+  previewFrame = requestAnimationFrame(() => {
+    previewFrame = 0;
+    const { x, y, row } = pointer;
+    if (!row) return;
+    if (row.dataset.id !== previewRowId) {
+      const item = eventsById.get(row.dataset.id);
+      if (!item) return;
+      previewRowId = row.dataset.id;
+      preview.textContent = item.summary;
+    }
+    preview.style.transform = 'translate(' + (x + 12) + 'px, ' + (y + 12) + 'px)';
+    preview.hidden = false;
+  });
 }
 
 let tickerPanel = null;
@@ -252,8 +267,8 @@ searchInput.addEventListener('input', () => {
 window.addEventListener('scroll', onScroll, { passive: true });
 resultsList.addEventListener('mousemove', showPreview);
 resultsList.addEventListener('mouseleave', hidePreview);
-resultsList.addEventListener('wheel', hidePreview);
-resultsList.addEventListener('touchstart', hidePreview);
+resultsList.addEventListener('wheel', hidePreview, { passive: true });
+resultsList.addEventListener('touchstart', hidePreview, { passive: true });
 backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 tickerToggle.addEventListener('click', () => (tickerPanel ? closeTicker() : openTicker()));
 
