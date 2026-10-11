@@ -20,7 +20,8 @@ function escapeHtml(value) {
 }
 
 function formatTime(iso) {
-  return new Date(iso).toLocaleTimeString('en-GB', { hour12: false, timeZone: 'UTC' });
+  // timestamps are ISO strings in UTC: "2026-10-09T14:21:07.123Z" -> "14:21:07"
+  return iso.slice(11, 19);
 }
 
 function countByAgent(events) {
@@ -78,18 +79,45 @@ function rememberViewed(items) {
 
 // Sorted once, newest first. ISO timestamps in the same format sort correctly as strings.
 const newestFirst = [...window.ACTIVITY].sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
-const searchText = newestFirst.map((event) =>
-  [event.id, event.timestamp, event.agent, event.tool, event.status, event.latencyMs, event.summary]
+// Built on first use (or when the browser is idle), not during page load.
+let searchText = null;
+
+function toSearchText(event) {
+  return [event.id, event.timestamp, event.agent, event.tool, event.status, event.latencyMs, event.summary]
     .join(' ')
-    .toLowerCase(),
-);
+    .toLowerCase();
+}
+
+function getSearchText() {
+  searchText ??= newestFirst.map(toSearchText);
+  return searchText;
+}
+
+const whenIdle = window.requestIdleCallback || ((callback) => setTimeout(callback, 1));
+
+// fill the index in small chunks while the browser is idle, so typing never waits on it
+function buildSearchTextWhenIdle() {
+  const text = [];
+  const step = (deadline) => {
+    if (searchText) return;
+    while (text.length < newestFirst.length && (!deadline || deadline.timeRemaining() > 2)) {
+      const end = Math.min(text.length + 500, newestFirst.length);
+      for (let i = text.length; i < end; i++) text.push(toSearchText(newestFirst[i]));
+      if (!deadline) break;
+    }
+    if (text.length < newestFirst.length) whenIdle(step);
+    else searchText = text;
+  };
+  whenIdle(step);
+}
 
 function search(query) {
   const needle = query.trim().toLowerCase();
   if (!needle) return newestFirst;
+  const text = getSearchText();
   const matches = [];
   for (let i = 0; i < newestFirst.length; i++) {
-    if (searchText[i].includes(needle)) matches.push(newestFirst[i]);
+    if (text[i].includes(needle)) matches.push(newestFirst[i]);
   }
   return matches;
 }
@@ -116,10 +144,17 @@ function renderResults(query) {
   rememberViewed(page);
 }
 
-const callsPerMinute = new Map();
-for (const event of window.ACTIVITY) {
-  const minute = event.timestamp.slice(11, 16);
-  callsPerMinute.set(minute, (callsPerMinute.get(minute) || 0) + 1);
+let callsPerMinute = null;
+
+function callsInMinute(minute) {
+  if (!callsPerMinute) {
+    callsPerMinute = new Map();
+    for (const event of window.ACTIVITY) {
+      const key = event.timestamp.slice(11, 16);
+      callsPerMinute.set(key, (callsPerMinute.get(key) || 0) + 1);
+    }
+  }
+  return callsPerMinute.get(minute) || 0;
 }
 
 // rows currently inside the middle band of the viewport (30%–60% from the top)
@@ -156,7 +191,7 @@ function updateFocusedRow() {
   focusedRow = next;
   if (next) {
     const minute = next.dataset.minute;
-    scrollContext.textContent = minute + ' UTC · ' + (callsPerMinute.get(minute) || 0) + ' calls that minute';
+    scrollContext.textContent = minute + ' UTC · ' + callsInMinute(minute) + ' calls that minute';
   } else {
     scrollContext.textContent = '';
   }
@@ -183,7 +218,7 @@ function hidePreview() {
   preview.hidden = true;
 }
 
-const eventsById = new Map(window.ACTIVITY.map((event) => [event.id, event]));
+let eventsById = null;
 let previewRowId = null;
 let previewFrame = 0;
 let pointer = { x: 0, y: 0, row: null };
@@ -196,6 +231,7 @@ function showPreview(event) {
     const { x, y, row } = pointer;
     if (!row) return;
     if (row.dataset.id !== previewRowId) {
+      eventsById ??= new Map(window.ACTIVITY.map((event) => [event.id, event]));
       const item = eventsById.get(row.dataset.id);
       if (!item) return;
       previewRowId = row.dataset.id;
@@ -274,3 +310,4 @@ tickerToggle.addEventListener('click', () => (tickerPanel ? closeTicker() : open
 
 renderAgents();
 renderResults('');
+buildSearchTextWhenIdle();
