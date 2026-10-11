@@ -215,6 +215,7 @@ main {
   white-space: nowrap;
   text-overflow: ellipsis;
   color: var(--muted);
+  font-size: 13px;
 }
 
 .scroll-context {

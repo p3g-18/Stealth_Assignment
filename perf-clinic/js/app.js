@@ -130,20 +130,8 @@ function renderResults(query) {
       '</li>'
     );
   }).join('');
-  fitSummaries();
   observeRows();
   rememberViewed(page);
-}
-
-function fitSummaries() {
-  resultsList.querySelectorAll('.result-summary').forEach((cell) => {
-    let size = 14;
-    cell.style.fontSize = size + 'px';
-    while (cell.scrollWidth > cell.clientWidth && size > 11) {
-      size -= 0.5;
-      cell.style.fontSize = size + 'px';
-    }
-  });
 }
 
 const callsPerMinute = new Map();
@@ -283,7 +271,6 @@ searchInput.addEventListener('input', () => {
 });
 window.addEventListener('scroll', onScroll, { passive: true });
 window.addEventListener('resize', equalizeCardHeights);
-window.addEventListener('resize', fitSummaries);
 resultsList.addEventListener('mousemove', showPreview);
 resultsList.addEventListener('mouseleave', hidePreview);
 resultsList.addEventListener('wheel', hidePreview);
