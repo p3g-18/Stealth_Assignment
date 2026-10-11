@@ -1,36 +1,28 @@
-:root {
-  --bg: #ffffff;
-  --bg-subtle: #f6f7f9;
-  --border: #e3e5e8;
-  --text: #1d2127;
-  --text-muted: #5c6370;
-  --accent: #2f5bd3;
+@import 'tailwindcss';
 
-  --status-ok-bg: #e6f4ea;
-  --status-ok-text: #1e6b34;
-  --status-blocked-bg: #fff4e0;
-  --status-blocked-text: #8a5300;
-  --status-error-bg: #fde8e8;
-  --status-error-text: #a8251f;
+/*
+ * Design tokens. Each `--color-*` here becomes Tailwind utilities, e.g.
+ * `--color-muted` → `text-muted`, `bg-muted`, `border-muted`.
+ * Kept as CSS variables so dark mode can later swap values in one place.
+ */
+@theme {
+  --color-bg: #ffffff;
+  --color-subtle: #f6f7f9;
+  --color-line: #e3e5e8;
+  --color-fg: #1d2127;
+  --color-muted: #5c6370;
+  --color-accent: #2f5bd3;
 
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--text);
-  background: var(--bg);
+  --color-ok-bg: #e6f4ea;
+  --color-ok-fg: #1e6b34;
+  --color-blocked-bg: #fff4e0;
+  --color-blocked-fg: #8a5300;
+  --color-error-bg: #fde8e8;
+  --color-error-fg: #a8251f;
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  background: var(--bg);
-}
-
-button {
-  font: inherit;
+@layer base {
+  body {
+    @apply bg-bg text-sm text-fg antialiased;
+  }
 }
