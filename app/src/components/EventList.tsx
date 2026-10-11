@@ -12,9 +12,12 @@ const SLOW_AFTER_MS = 1000;
 interface EventListProps {
   filters: EventFilters;
   onClearFilters: () => void;
+  selectedId: string | null;
+  hrefFor: (id: string) => string;
+  onSelect: (id: string) => void;
 }
 
-export function EventList({ filters, onClearFilters }: EventListProps) {
+export function EventList({ filters, onClearFilters, selectedId, hrefFor, onSelect }: EventListProps) {
   const {
     data,
     error,
@@ -108,7 +111,7 @@ export function EventList({ filters, onClearFilters }: EventListProps) {
         aria-busy={isPlaceholderData}
         className={`transition-opacity motion-reduce:transition-none ${isPlaceholderData ? 'opacity-50' : ''}`}
       >
-        <EventTable events={events} />
+        <EventTable events={events} selectedId={selectedId} hrefFor={hrefFor} onSelect={onSelect} />
       </div>
 
       <div ref={sentinelRef} className="flex flex-col items-center gap-2 px-4 py-6 text-center text-muted">

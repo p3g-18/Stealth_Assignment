@@ -1,13 +1,26 @@
 import { AgentFilter } from './components/AgentFilter';
+import { EventDetail } from './components/EventDetail';
 import { EventList } from './components/EventList';
 import { SearchBox } from './components/SearchBox';
 import { StatusFilter } from './components/StatusFilter';
 import { hasFilters } from './lib/filters';
 import { useFilters } from './lib/useFilters';
+import { useSelectedEvent } from './lib/useSelectedEvent';
 
 export default function App() {
   const [filters, setFilters] = useFilters();
   const clearFilters = () => setFilters({});
+  const { selectedId, hrefFor, select, close } = useSelectedEvent();
+
+  const closeDetail = () => {
+    const id = selectedId;
+    close();
+    if (id) {
+      requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>(`tr[data-event-id="${CSS.escape(id)}"] a`)?.focus();
+      });
+    }
+  };
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-6">
@@ -37,7 +50,15 @@ export default function App() {
         )}
       </div>
 
-      <EventList filters={filters} onClearFilters={clearFilters} />
+      <EventList
+        filters={filters}
+        onClearFilters={clearFilters}
+        selectedId={selectedId}
+        hrefFor={hrefFor}
+        onSelect={select}
+      />
+
+      {selectedId && <EventDetail id={selectedId} onClose={closeDetail} />}
     </main>
   );
 }
