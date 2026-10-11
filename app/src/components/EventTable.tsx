@@ -1,10 +1,12 @@
 import type { MouseEvent } from 'react';
 import type { EventSummary } from '../api/types';
-import { formatLatency, formatTimestamp } from '../lib/format';
+import { formatDate, formatLatency, formatTime, formatTimestamp } from '../lib/format';
 import { StatusBadge } from './StatusBadge';
 
-const th = 'sticky top-0 border-b border-line bg-subtle px-3 py-2 text-left font-semibold text-muted';
-const td = 'border-b border-line px-3 py-2 whitespace-nowrap';
+const th = 'sticky top-0 border-b border-line bg-subtle px-2 py-2 text-left font-semibold text-muted sm:px-3';
+const td = 'border-b border-line px-2 py-2 whitespace-nowrap sm:px-3';
+// below `sm`, tool and latency fold into the agent and status cells
+const wideOnly = 'hidden sm:table-cell';
 
 interface EventTableProps {
   events: EventSummary[];
@@ -36,11 +38,17 @@ export function EventTable({ events, skeletonRows = 0, selectedId, hrefFor, onSe
     <table className="w-full border-collapse" aria-busy={skeletonRows > 0}>
       <thead>
         <tr>
-          <th scope="col" className={th}>Timestamp</th>
-          <th scope="col" className={th}>Agent</th>
-          <th scope="col" className={th}>Tool</th>
-          <th scope="col" className={th}>Status</th>
-          <th scope="col" className={`${th} text-right`}>Latency</th>
+          <th scope="col" className={th}>
+            <span className="sm:hidden">Time</span>
+            <span className="hidden sm:inline">Timestamp</span>
+          </th>
+          <th scope="col" className={th}>
+            <span className="sm:hidden">Agent · tool</span>
+            <span className="hidden sm:inline">Agent</span>
+          </th>
+          <th scope="col" className={`${th} ${wideOnly}`}>Tool</th>
+          <th scope="col" className={`${th} text-right sm:text-left`}>Status</th>
+          <th scope="col" className={`${th} ${wideOnly} text-right`}>Latency</th>
         </tr>
       </thead>
       <tbody>
@@ -61,16 +69,24 @@ export function EventTable({ events, skeletonRows = 0, selectedId, hrefFor, onSe
                   className="rounded-sm hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   <time dateTime={event.timestamp} title={event.timestamp}>
-                    {formatTimestamp(event.timestamp)}
+                    <span className="hidden sm:inline">{formatTimestamp(event.timestamp)}</span>
+                    <span className="sm:hidden">
+                      {formatTime(event.timestamp)}
+                      <span className="block text-xs text-muted">{formatDate(event.timestamp)}</span>
+                    </span>
                   </time>
                 </a>
               </td>
-              <td className={td}>{event.agent}</td>
-              <td className={`${td} font-mono text-[13px]`}>{event.tool}</td>
               <td className={td}>
-                <StatusBadge status={event.status} />
+                <div className="max-w-[40vw] truncate sm:max-w-none">{event.agent}</div>
+                <div className="max-w-[40vw] truncate font-mono text-xs text-muted sm:hidden">{event.tool}</div>
               </td>
-              <td className={`${td} text-right tabular-nums`}>{formatLatency(event.latencyMs)}</td>
+              <td className={`${td} ${wideOnly} font-mono text-[13px]`}>{event.tool}</td>
+              <td className={`${td} text-right sm:text-left`}>
+                <StatusBadge status={event.status} />
+                <div className="text-xs text-muted tabular-nums sm:hidden">{formatLatency(event.latencyMs)}</div>
+              </td>
+              <td className={`${td} ${wideOnly} text-right tabular-nums`}>{formatLatency(event.latencyMs)}</td>
             </tr>
           );
         })}
@@ -82,16 +98,20 @@ export function EventTable({ events, skeletonRows = 0, selectedId, hrefFor, onSe
   );
 }
 
-const SKELETON_WIDTHS = ['w-36', 'w-28', 'w-24', 'w-10', 'w-14'];
+const SKELETON_CELLS = [
+  { bar: 'w-16 sm:w-36', cell: '' },
+  { bar: 'w-28', cell: '' },
+  { bar: 'w-24', cell: wideOnly },
+  { bar: 'ml-auto w-12 sm:ml-0 sm:w-10', cell: '' },
+  { bar: 'ml-auto w-14', cell: wideOnly },
+];
 
 function SkeletonRow() {
   return (
     <tr aria-hidden="true">
-      {SKELETON_WIDTHS.map((width, i) => (
-        <td key={i} className={td}>
-          <div
-            className={`h-4 rounded bg-line motion-safe:animate-pulse ${width} ${i === 4 ? 'ml-auto' : ''}`}
-          />
+      {SKELETON_CELLS.map(({ bar, cell }, i) => (
+        <td key={i} className={`${td} ${cell}`}>
+          <div className={`h-4 rounded bg-line motion-safe:animate-pulse ${bar}`} />
         </td>
       ))}
     </tr>

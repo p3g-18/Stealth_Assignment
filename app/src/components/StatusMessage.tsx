@@ -3,7 +3,7 @@ import { ApiError } from '../api/client';
 import { describeError } from '../lib/describeError';
 
 export const buttonClass =
-  'rounded-md border border-line bg-bg px-3 py-1.5 font-medium text-fg hover:bg-subtle ' +
+  'rounded-md border border-line bg-bg px-3 py-1.5 font-medium text-fg hover:bg-subtle pointer-coarse:py-2.5 ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
 
 interface StatusMessageProps {

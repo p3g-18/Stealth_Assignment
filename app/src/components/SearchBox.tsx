@@ -36,7 +36,7 @@ export function SearchBox({ value, onSearch }: SearchBoxProps) {
   }
 
   return (
-    <form role="search" onSubmit={handleSubmit} className="flex-1">
+    <form role="search" onSubmit={handleSubmit} className="w-full sm:w-auto sm:min-w-56 sm:flex-1">
       <label htmlFor="search" className="sr-only">
         Search events
       </label>
@@ -48,7 +48,7 @@ export function SearchBox({ value, onSearch }: SearchBoxProps) {
         placeholder="Search agent, tool or arguments…"
         autoComplete="off"
         spellCheck={false}
-        className="w-full rounded-md border border-line bg-bg px-3 py-1.5 placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+        className="w-full rounded-md border border-line bg-bg px-3 py-1.5 placeholder:text-muted pointer-coarse:py-2.5 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
       />
     </form>
   );
