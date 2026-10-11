@@ -44,6 +44,9 @@ export const EventTable = memo(function EventTable({
           <th scope="col" className={`${th} ${wideOnly}`}>Tool</th>
           <th scope="col" className={`${th} text-right md:text-left`}>Status</th>
           <th scope="col" className={`${th} ${wideOnly} text-right`}>Latency</th>
+          <th scope="col" className={`${th} w-6 pl-0 md:pl-0`}>
+            <span className="sr-only">Details</span>
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -93,7 +96,7 @@ const EventRow = memo(function EventRow({ event, selected, live, href, onSelect 
       data-event-id={event.id}
       aria-current={selected || undefined}
       onClick={handleRowClick}
-      className={`cursor-pointer ${selected ? 'bg-accent/10' : 'hover:bg-subtle'} ${live ? 'motion-safe:animate-row-in' : ''}`}
+      className={`group cursor-pointer ${selected ? 'bg-accent/12' : 'hover:bg-accent/6 focus-within:bg-accent/6'} ${live ? 'motion-safe:animate-row-in' : ''}`}
     >
       <td className={`${td} tabular-nums`}>
         <a
@@ -121,6 +124,13 @@ const EventRow = memo(function EventRow({ event, selected, live, href, onSelect 
         <div className="text-xs text-muted tabular-nums md:hidden">{formatLatency(event.latencyMs)}</div>
       </td>
       <td className={`${td} ${wideOnly} text-right tabular-nums`}>{formatLatency(event.latencyMs)}</td>
+      {/* visual cue that the row opens details; the timestamp link is what screen readers announce */}
+      <td
+        aria-hidden="true"
+        className={`${td} w-6 pl-0 text-right text-lg leading-none md:pl-0 ${selected ? 'text-accent' : 'text-muted group-hover:text-accent group-focus-within:text-accent'}`}
+      >
+        ›
+      </td>
     </tr>
   );
 });
@@ -131,6 +141,7 @@ const SKELETON_CELLS = [
   { bar: 'w-24', cell: wideOnly },
   { bar: 'ml-auto w-12 md:ml-0 md:w-10', cell: '' },
   { bar: 'ml-auto w-14', cell: wideOnly },
+  { bar: 'invisible', cell: 'w-6 pl-0 md:pl-0' },
 ];
 
 function SkeletonRow() {
