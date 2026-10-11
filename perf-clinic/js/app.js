@@ -79,11 +79,22 @@ function rememberViewed(items) {
   }
 }
 
+// Sorted once, newest first. ISO timestamps in the same format sort correctly as strings.
+const newestFirst = [...window.ACTIVITY].sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
+const searchText = newestFirst.map((event) =>
+  [event.id, event.timestamp, event.agent, event.tool, event.status, event.latencyMs, event.summary]
+    .join(' ')
+    .toLowerCase(),
+);
+
 function search(query) {
   const needle = query.trim().toLowerCase();
-  return window.ACTIVITY
-    .filter((event) => JSON.stringify(event).toLowerCase().includes(needle))
-    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  if (!needle) return newestFirst;
+  const matches = [];
+  for (let i = 0; i < newestFirst.length; i++) {
+    if (searchText[i].includes(needle)) matches.push(newestFirst[i]);
+  }
+  return matches;
 }
 
 function renderResults(query) {
@@ -251,7 +262,11 @@ function closeTicker() {
   tickerToggle.textContent = 'Show live calls';
 }
 
-searchInput.addEventListener('input', () => renderResults(searchInput.value));
+let searchTimer = 0;
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => renderResults(searchInput.value), 150);
+});
 window.addEventListener('scroll', onScroll, { passive: true });
 window.addEventListener('resize', equalizeCardHeights);
 window.addEventListener('resize', fitSummaries);
