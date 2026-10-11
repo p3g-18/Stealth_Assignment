@@ -106,6 +106,7 @@ function renderResults(query) {
     );
   }).join('');
   fitSummaries();
+  observeRows();
   rememberViewed(page);
 }
 
@@ -120,28 +121,64 @@ function fitSummaries() {
   });
 }
 
-function onScroll() {
-  const scrolled = window.scrollY;
-  const max = document.documentElement.scrollHeight - window.innerHeight;
-  progress.style.width = (max > 0 ? (scrolled / max) * 100 : 0) + '%';
-  topbar.classList.toggle('topbar-raised', scrolled > 8);
-  topbar.style.paddingBlock = Math.max(6, 12 - scrolled / 20) + 'px';
-  backToTop.classList.toggle('visible', scrolled > window.innerHeight);
-  resultsList.querySelectorAll('.result-row').forEach((row) => {
-    row.classList.remove('in-focus');
-    const rect = row.getBoundingClientRect();
-    if (rect.top > window.innerHeight * 0.3 && rect.top < window.innerHeight * 0.6) {
-      row.classList.add('in-focus');
+const callsPerMinute = new Map();
+for (const event of window.ACTIVITY) {
+  const minute = event.timestamp.slice(11, 16);
+  callsPerMinute.set(minute, (callsPerMinute.get(minute) || 0) + 1);
+}
+
+// rows currently inside the middle band of the viewport (30%–60% from the top)
+const rowsInBand = new Set();
+let focusedRow = null;
+
+const focusObserver = new IntersectionObserver(
+  (entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) rowsInBand.add(entry.target);
+      else rowsInBand.delete(entry.target);
     }
-  });
-  const focused = resultsList.querySelector('.in-focus');
-  if (focused) {
-    const minute = focused.dataset.minute;
-    const sameMinute = window.ACTIVITY.filter((event) => new Date(event.timestamp).toISOString().slice(11, 16) === minute).length;
-    scrollContext.textContent = minute + ' UTC · ' + sameMinute + ' calls that minute';
+    updateFocusedRow();
+  },
+  { rootMargin: '-30% 0px -40% 0px' },
+);
+
+function observeRows() {
+  focusObserver.disconnect();
+  rowsInBand.clear();
+  focusedRow = null;
+  resultsList.querySelectorAll('.result-row').forEach((row) => focusObserver.observe(row));
+  updateFocusedRow();
+}
+
+function updateFocusedRow() {
+  let next = null;
+  for (const row of rowsInBand) {
+    if (!next || next.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_PRECEDING) next = row;
+  }
+  if (next === focusedRow) return;
+  focusedRow?.classList.remove('in-focus');
+  next?.classList.add('in-focus');
+  focusedRow = next;
+  if (next) {
+    const minute = next.dataset.minute;
+    scrollContext.textContent = minute + ' UTC · ' + (callsPerMinute.get(minute) || 0) + ' calls that minute';
   } else {
     scrollContext.textContent = '';
   }
+}
+
+let scrollFrame = 0;
+
+function onScroll() {
+  if (scrollFrame) return;
+  scrollFrame = requestAnimationFrame(() => {
+    scrollFrame = 0;
+    const scrolled = window.scrollY;
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    progress.style.transform = 'scaleX(' + (max > 0 ? scrolled / max : 0) + ')';
+    topbar.classList.toggle('topbar-raised', scrolled > 8);
+    backToTop.classList.toggle('visible', scrolled > window.innerHeight);
+  });
 }
 
 function hidePreview() {
@@ -215,7 +252,7 @@ function closeTicker() {
 }
 
 searchInput.addEventListener('input', () => renderResults(searchInput.value));
-window.addEventListener('scroll', onScroll);
+window.addEventListener('scroll', onScroll, { passive: true });
 window.addEventListener('resize', equalizeCardHeights);
 window.addEventListener('resize', fitSummaries);
 resultsList.addEventListener('mousemove', showPreview);
