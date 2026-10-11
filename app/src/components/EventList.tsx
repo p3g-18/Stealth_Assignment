@@ -5,7 +5,7 @@ import { hasFilters } from '../lib/filters';
 import { formatCount } from '../lib/format';
 import { useDelayedFlag } from '../lib/useDelayedFlag';
 import { useLiveEvents } from '../lib/useLiveEvents';
-import { LiveStatus, NewEventsPill } from './LiveIndicators';
+import { LiveFeed } from './LiveFeed';
 import { EventTable } from './EventTable';
 import { ErrorMessage, SlowNotice, StatusMessage, buttonClass } from './StatusMessage';
 
@@ -19,8 +19,6 @@ interface EventListProps {
   onSelect: (id: string) => void;
   live: boolean;
 }
-
-const AT_TOP_PX = 40;
 
 export function EventList({ filters, onClearFilters, selectedId, hrefFor, onSelect, live }: EventListProps) {
   const {
@@ -41,20 +39,12 @@ export function EventList({ filters, onClearFilters, selectedId, hrefFor, onSele
   const loaded = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
   const loadedIds = useMemo(() => new Set(loaded.map((e) => e.id)), [loaded]);
 
-  const selectedRef = useRef(selectedId);
-  useEffect(() => {
-    selectedRef.current = selectedId;
-  });
-
   const liveEvents = useLiveEvents({
     enabled: live,
     filters,
     ready: Boolean(data) && !isPlaceholderData,
     newestLoaded: loaded[0]?.timestamp,
     loadedIds,
-    // only slide rows in when it won't move what the user is looking at
-    canReveal: () =>
-      window.scrollY < AT_TOP_PX && !selectedRef.current && !window.getSelection()?.toString(),
   });
 
   const liveIds = useMemo(() => new Set(liveEvents.shown.map((e) => e.id)), [liveEvents.shown]);
@@ -64,11 +54,6 @@ export function EventList({ filters, onClearFilters, selectedId, hrefFor, onSele
   );
   const total = (data?.pages[0]?.total ?? 0) + liveEvents.shown.length;
 
-  function showNewEvents() {
-    liveEvents.reveal();
-    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    window.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' });
-  }
 
   const isSlow = useDelayedFlag(isFetching, SLOW_AFTER_MS);
   const isRetrying = isFetching && failureCount > 0;
@@ -130,17 +115,21 @@ export function EventList({ filters, onClearFilters, selectedId, hrefFor, onSele
 
   return (
     <section aria-label="Events">
-      <div className="my-3 flex items-center justify-between gap-4">
-        <p className="text-muted" role="status">
-          {isPlaceholderData
-            ? 'Updating results…'
-            : `Showing ${formatCount(events.length)} of ${formatCount(total)} events`}
-        </p>
-        {live && <LiveStatus status={liveEvents.status} />}
-      </div>
-      {live && liveEvents.pendingCount > 0 && (
-        <NewEventsPill count={liveEvents.pendingCount} onClick={showNewEvents} />
+      {live && (
+        <div className="mt-3">
+          <LiveFeed
+            status={liveEvents.status}
+            pending={liveEvents.pending}
+            onShowInList={liveEvents.reveal}
+            onSelect={onSelect}
+          />
+        </div>
       )}
+      <p className="my-3 text-muted" role="status">
+        {isPlaceholderData
+          ? 'Updating results…'
+          : `Showing ${formatCount(events.length)} of ${formatCount(total)} events`}
+      </p>
       {isPlaceholderData && isSlow && (
         <div className="mb-2">
           <SlowNotice retrying={isRetrying} />

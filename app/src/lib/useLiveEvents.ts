@@ -12,7 +12,7 @@ interface LiveState {
 }
 
 type LiveAction =
-  | { type: 'add'; events: EventSummary[]; reveal: boolean }
+  | { type: 'add'; events: EventSummary[] }
   | { type: 'reveal' }
   | { type: 'reset' }
   | { type: 'dropPending' };
@@ -33,10 +33,7 @@ function reducer(state: LiveState, action: LiveAction): LiveState {
         seen.add(event.id);
         fresh.push(event);
       }
-      if (fresh.length === 0 && !(action.reveal && state.pending.length)) return state;
-      if (action.reveal) {
-        return { shown: [...state.shown, ...state.pending, ...fresh].sort(newestFirst), pending: [] };
-      }
+      if (fresh.length === 0) return state;
       return { ...state, pending: [...state.pending, ...fresh].sort(newestFirst) };
     }
     case 'reveal':
@@ -55,10 +52,9 @@ interface Options {
   ready: boolean;
   newestLoaded: string | undefined;
   loadedIds: Set<string>;
-  canReveal: () => boolean;
 }
 
-export function useLiveEvents({ enabled, filters, ready, newestLoaded, loadedIds, canReveal }: Options) {
+export function useLiveEvents({ enabled, filters, ready, newestLoaded, loadedIds }: Options) {
   const [state, dispatch] = useReducer(reducer, EMPTY);
   const [status, setStatus] = useState<StreamStatus>('connecting');
 
@@ -69,9 +65,9 @@ export function useLiveEvents({ enabled, filters, ready, newestLoaded, loadedIds
     dispatch({ type: 'reset' });
   }
 
-  const latest = useRef({ filters, ready, newestLoaded, loadedIds, canReveal });
+  const latest = useRef({ filters, ready, newestLoaded, loadedIds });
   useEffect(() => {
-    latest.current = { filters, ready, newestLoaded, loadedIds, canReveal };
+    latest.current = { filters, ready, newestLoaded, loadedIds };
   });
 
   useEffect(() => {
@@ -90,14 +86,14 @@ export function useLiveEvents({ enabled, filters, ready, newestLoaded, loadedIds
     });
 
     const timer = setInterval(() => {
-      const { filters, ready, newestLoaded, loadedIds, canReveal } = latest.current;
+      const { filters, ready, newestLoaded, loadedIds } = latest.current;
       // hold events until the list for these filters has loaded
       if (!ready) return;
       const floor = newestLoaded ? Date.parse(newestLoaded) : -Infinity;
       const events = buffer
         .splice(0)
         .filter((e) => Date.parse(e.timestamp) > floor && !loadedIds.has(e.id) && matchesFilters(e, filters));
-      dispatch({ type: 'add', events, reveal: canReveal() });
+      dispatch({ type: 'add', events });
     }, BATCH_MS);
 
     return () => {
@@ -109,7 +105,7 @@ export function useLiveEvents({ enabled, filters, ready, newestLoaded, loadedIds
   return {
     status,
     shown: state.shown,
-    pendingCount: state.pending.length,
+    pending: state.pending,
     reveal: () => dispatch({ type: 'reveal' }),
   };
 }
