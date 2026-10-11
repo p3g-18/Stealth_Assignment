@@ -17,7 +17,7 @@ export function StatusFilter({ value, onChange }: StatusFilterProps) {
       {OPTIONS.map((option) => (
         <label
           key={option.label}
-          className="cursor-pointer border-r border-line px-3 py-1.5 font-medium pointer-coarse:py-2.5 capitalize text-muted last:border-r-0 hover:bg-subtle has-checked:bg-fg has-checked:text-bg has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-accent"
+          className="cursor-pointer border-r border-line px-2.5 py-1.5 sm:px-3 font-medium pointer-coarse:py-2.5 capitalize text-muted last:border-r-0 hover:bg-subtle has-checked:bg-fg has-checked:text-bg has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-accent"
         >
           <input
             type="radio"

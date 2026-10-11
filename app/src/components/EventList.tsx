@@ -60,7 +60,7 @@ export function EventList({ filters, onClearFilters, selectedId, hrefFor, onSele
   if (isPending) {
     return (
       <section aria-label="Events">
-        <p className="mb-2 text-muted" role="status">
+        <p className="my-3 text-muted" role="status">
           Loading events…
         </p>
         <EventTable events={[]} skeletonRows={12} />
@@ -96,7 +96,7 @@ export function EventList({ filters, onClearFilters, selectedId, hrefFor, onSele
 
   return (
     <section aria-label="Events">
-      <p className="mb-2 text-muted" role="status">
+      <p className="my-3 text-muted" role="status">
         {isPlaceholderData
           ? 'Updating results…'
           : `Showing ${formatCount(events.length)} of ${formatCount(total)} events`}

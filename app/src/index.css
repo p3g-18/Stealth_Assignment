@@ -17,6 +17,11 @@
 }
 
 @layer base {
+  html {
+    /* keep focused/scrolled-to rows clear of the sticky header and table head */
+    scroll-padding-top: calc(var(--header-h, 0px) + 3rem);
+  }
+
   body {
     @apply bg-bg text-sm text-fg antialiased;
   }
