@@ -65,17 +65,32 @@ function equalizeCardHeights() {
   });
 }
 
+const MAX_VIEWED = 5000;
+
 function loadViewed() {
-  return JSON.parse(localStorage.getItem(storageKey) || '[]');
+  try {
+    return new Set(JSON.parse(localStorage.getItem(storageKey) || '[]'));
+  } catch {
+    return new Set();
+  }
 }
 
+const viewed = loadViewed();
+
 function rememberViewed(items) {
-  const viewed = loadViewed();
-  for (const item of items) {
-    if (!viewed.includes(item.id)) {
-      viewed.push(item.id);
-    }
-    localStorage.setItem(storageKey, JSON.stringify(viewed));
+  const before = viewed.size;
+  for (const item of items) viewed.add(item.id);
+  if (viewed.size === before) return;
+  // keep the most recently seen ids only, and write once
+  if (viewed.size > MAX_VIEWED) {
+    const recent = [...viewed].slice(-MAX_VIEWED);
+    viewed.clear();
+    recent.forEach((id) => viewed.add(id));
+  }
+  try {
+    localStorage.setItem(storageKey, JSON.stringify([...viewed]));
+  } catch {
+    // storage full or blocked: "New" badges just won't persist
   }
 }
 
@@ -100,10 +115,9 @@ function search(query) {
 function renderResults(query) {
   const matches = search(query);
   const page = matches.slice(0, pageSize);
-  const viewed = loadViewed();
   resultsCount.textContent = matches.length.toLocaleString() + ' matching tool calls';
   resultsList.innerHTML = page.map((event) => {
-    const isNew = !viewed.includes(event.id);
+    const isNew = !viewed.has(event.id);
     return (
       '<li class="result-row status-' + event.status + '" data-id="' + event.id + '" data-minute="' + event.timestamp.slice(11, 16) + '">' +
       '<span class="result-time">' + formatTime(event.timestamp) + '</span>' +
