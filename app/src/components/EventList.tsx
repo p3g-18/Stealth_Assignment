@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { EventFilters } from '../api/types';
 import { useEvents } from '../api/useEvents';
 import { hasFilters } from '../lib/filters';
 import { formatCount } from '../lib/format';
 import { useDelayedFlag } from '../lib/useDelayedFlag';
+import { useLiveEvents } from '../lib/useLiveEvents';
+import { LiveStatus, NewEventsPill } from './LiveIndicators';
 import { EventTable } from './EventTable';
 import { ErrorMessage, SlowNotice, StatusMessage, buttonClass } from './StatusMessage';
 
@@ -15,9 +17,12 @@ interface EventListProps {
   selectedId: string | null;
   hrefFor: (id: string) => string;
   onSelect: (id: string) => void;
+  live: boolean;
 }
 
-export function EventList({ filters, onClearFilters, selectedId, hrefFor, onSelect }: EventListProps) {
+const AT_TOP_PX = 40;
+
+export function EventList({ filters, onClearFilters, selectedId, hrefFor, onSelect, live }: EventListProps) {
   const {
     data,
     error,
@@ -33,8 +38,37 @@ export function EventList({ filters, onClearFilters, selectedId, hrefFor, onSele
     isFetchNextPageError,
   } = useEvents(filters);
 
-  const events = data?.pages.flatMap((page) => page.items) ?? [];
-  const total = data?.pages[0]?.total ?? 0;
+  const loaded = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
+  const loadedIds = useMemo(() => new Set(loaded.map((e) => e.id)), [loaded]);
+
+  const selectedRef = useRef(selectedId);
+  useEffect(() => {
+    selectedRef.current = selectedId;
+  });
+
+  const liveEvents = useLiveEvents({
+    enabled: live,
+    filters,
+    ready: Boolean(data) && !isPlaceholderData,
+    newestLoaded: loaded[0]?.timestamp,
+    loadedIds,
+    // only slide rows in when it won't move what the user is looking at
+    canReveal: () =>
+      window.scrollY < AT_TOP_PX && !selectedRef.current && !window.getSelection()?.toString(),
+  });
+
+  const liveIds = useMemo(() => new Set(liveEvents.shown.map((e) => e.id)), [liveEvents.shown]);
+  const events = useMemo(
+    () => [...liveEvents.shown, ...loaded.filter((e) => !liveIds.has(e.id))],
+    [liveEvents.shown, loaded, liveIds],
+  );
+  const total = (data?.pages[0]?.total ?? 0) + liveEvents.shown.length;
+
+  function showNewEvents() {
+    liveEvents.reveal();
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' });
+  }
 
   const isSlow = useDelayedFlag(isFetching, SLOW_AFTER_MS);
   const isRetrying = isFetching && failureCount > 0;
@@ -96,11 +130,17 @@ export function EventList({ filters, onClearFilters, selectedId, hrefFor, onSele
 
   return (
     <section aria-label="Events">
-      <p className="my-3 text-muted" role="status">
-        {isPlaceholderData
-          ? 'Updating results…'
-          : `Showing ${formatCount(events.length)} of ${formatCount(total)} events`}
-      </p>
+      <div className="my-3 flex items-center justify-between gap-4">
+        <p className="text-muted" role="status">
+          {isPlaceholderData
+            ? 'Updating results…'
+            : `Showing ${formatCount(events.length)} of ${formatCount(total)} events`}
+        </p>
+        {live && <LiveStatus status={liveEvents.status} />}
+      </div>
+      {live && liveEvents.pendingCount > 0 && (
+        <NewEventsPill count={liveEvents.pendingCount} onClick={showNewEvents} />
+      )}
       {isPlaceholderData && isSlow && (
         <div className="mb-2">
           <SlowNotice retrying={isRetrying} />
@@ -111,7 +151,13 @@ export function EventList({ filters, onClearFilters, selectedId, hrefFor, onSele
         aria-busy={isPlaceholderData}
         className={`transition-opacity motion-reduce:transition-none ${isPlaceholderData ? 'opacity-50' : ''}`}
       >
-        <EventTable events={events} selectedId={selectedId} hrefFor={hrefFor} onSelect={onSelect} />
+        <EventTable
+          events={events}
+          liveIds={liveIds}
+          selectedId={selectedId}
+          hrefFor={hrefFor}
+          onSelect={onSelect}
+        />
       </div>
 
       <div ref={sentinelRef} className="flex flex-col items-center gap-2 px-4 py-6 text-center text-muted">

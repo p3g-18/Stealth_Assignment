@@ -11,6 +11,7 @@ const wideOnly = 'hidden md:table-cell';
 interface EventTableProps {
   events: EventSummary[];
   skeletonRows?: number;
+  liveIds?: Set<string>;
   selectedId?: string | null;
   hrefFor?: (id: string) => string;
   onSelect?: (id: string) => void;
@@ -20,7 +21,14 @@ function isPlainClick(event: MouseEvent) {
   return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 }
 
-export function EventTable({ events, skeletonRows = 0, selectedId, hrefFor, onSelect }: EventTableProps) {
+export function EventTable({
+  events,
+  skeletonRows = 0,
+  liveIds,
+  selectedId,
+  hrefFor,
+  onSelect,
+}: EventTableProps) {
   function handleRowClick(event: MouseEvent, id: string) {
     if ((event.target as HTMLElement).closest('a')) return;
     if (window.getSelection()?.toString()) return;
@@ -60,7 +68,7 @@ export function EventTable({ events, skeletonRows = 0, selectedId, hrefFor, onSe
               data-event-id={event.id}
               aria-current={selected || undefined}
               onClick={(e) => handleRowClick(e, event.id)}
-              className={`cursor-pointer ${selected ? 'bg-accent/10' : 'hover:bg-subtle'}`}
+              className={`cursor-pointer ${selected ? 'bg-accent/10' : 'hover:bg-subtle'} ${liveIds?.has(event.id) ? 'motion-safe:animate-row-in' : ''}`}
             >
               <td className={`${td} tabular-nums`}>
                 <a

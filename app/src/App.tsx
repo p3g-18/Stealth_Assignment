@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { AgentFilter } from './components/AgentFilter';
 import { EventDetail } from './components/EventDetail';
 import { EventList } from './components/EventList';
@@ -13,6 +14,7 @@ export default function App() {
   const clearFilters = () => setFilters({});
   const { selectedId, hrefFor, select, close } = useSelectedEvent();
   const headerRef = useStickyHeight<HTMLElement>('--header-h');
+  const [live, setLive] = useState(false);
 
   const closeDetail = () => {
     const id = selectedId;
@@ -54,6 +56,17 @@ export default function App() {
             onChange={(agents) => setFilters({ ...filters, agents })}
           />
           <StatusFilter value={filters.status} onChange={(status) => setFilters({ ...filters, status })} />
+          <button
+            type="button"
+            aria-pressed={live}
+            onClick={() => setLive((on) => !on)}
+            className={`flex items-center gap-2 rounded-md border px-3 py-1.5 font-medium pointer-coarse:py-2.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+              live ? 'border-ok-fg bg-ok-bg text-ok-fg' : 'border-line bg-bg text-fg hover:bg-subtle'
+            }`}
+          >
+            <span aria-hidden="true" className={`size-2 rounded-full ${live ? 'bg-ok-fg' : 'bg-muted'}`} />
+            Live
+          </button>
         </div>
       </header>
 
@@ -63,6 +76,7 @@ export default function App() {
         selectedId={selectedId}
         hrefFor={hrefFor}
         onSelect={select}
+        live={live}
       />
 
       {selectedId && <EventDetail id={selectedId} onClose={closeDetail} />}
