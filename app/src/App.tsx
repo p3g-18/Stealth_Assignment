@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AgentFilter } from './components/AgentFilter';
+import { AgentChips } from './components/AgentChips';
 import { EventDetail } from './components/EventDetail';
 import { EventList } from './components/EventList';
 import { SearchBox } from './components/SearchBox';
@@ -51,10 +51,6 @@ export default function App() {
               setFilters({ ...filters, q: q || undefined }, { replace: Boolean(filters.q) && Boolean(q) })
             }
           />
-          <AgentFilter
-            selected={filters.agents ?? []}
-            onChange={(agents) => setFilters({ ...filters, agents })}
-          />
           <StatusFilter value={filters.status} onChange={(status) => setFilters({ ...filters, status })} />
           <button
             type="button"
@@ -67,6 +63,13 @@ export default function App() {
             <span aria-hidden="true" className={`size-2 rounded-full ${live ? 'bg-ok-fg' : 'bg-muted'}`} />
             Live
           </button>
+        </div>
+
+        <div className="mt-2">
+          <AgentChips
+            selected={filters.agents ?? []}
+            onChange={(agents) => setFilters({ ...filters, agents })}
+          />
         </div>
       </header>
 
