@@ -11,8 +11,6 @@ const tickerToggle = document.getElementById('ticker-toggle');
 const preview = document.getElementById('row-preview');
 const scrollContext = document.getElementById('scroll-context');
 
-const minCardHeight = 220;
-
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -36,10 +34,10 @@ function countByAgent(events) {
 function renderAgents() {
   const counts = countByAgent(window.ACTIVITY);
   grid.innerHTML = window.AGENTS.map((agent, index) => {
-    const image = 'assets/agents/agent-' + String((index % 12) + 1).padStart(2, '0') + '.png';
+    const image = 'assets/agents/agent-' + String((index % 12) + 1).padStart(2, '0') + '.webp';
     return (
       '<article class="agent-card">' +
-      '<img class="agent-avatar" src="' + image + '" alt="">' +
+      '<img class="agent-avatar" src="' + image + '" width="48" height="48" loading="lazy" decoding="async" alt="">' +
       '<h3>' + escapeHtml(agent.name) + '</h3>' +
       '<p class="agent-owner">' + escapeHtml(agent.owner) + '</p>' +
       '<p class="agent-description">' + escapeHtml(agent.description) + '</p>' +
@@ -47,22 +45,6 @@ function renderAgents() {
       '</article>'
     );
   }).join('');
-  grid.querySelectorAll('img').forEach((img) => img.addEventListener('load', equalizeCardHeights));
-}
-
-function equalizeCardHeights() {
-  const cards = grid.querySelectorAll('.agent-card');
-  cards.forEach((card) => {
-    card.style.height = '';
-    const rowTop = card.offsetTop;
-    let tallest = Math.max(card.offsetHeight, minCardHeight);
-    cards.forEach((other) => {
-      if (other.offsetTop === rowTop) {
-        tallest = Math.max(tallest, other.offsetHeight);
-      }
-    });
-    card.style.height = tallest + 'px';
-  });
 }
 
 const MAX_VIEWED = 5000;
@@ -268,7 +250,6 @@ searchInput.addEventListener('input', () => {
   searchTimer = setTimeout(() => renderResults(searchInput.value), 150);
 });
 window.addEventListener('scroll', onScroll, { passive: true });
-window.addEventListener('resize', equalizeCardHeights);
 resultsList.addEventListener('mousemove', showPreview);
 resultsList.addEventListener('mouseleave', hidePreview);
 resultsList.addEventListener('wheel', hidePreview);
@@ -277,5 +258,4 @@ backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 's
 tickerToggle.addEventListener('click', () => (tickerPanel ? closeTicker() : openTicker()));
 
 renderAgents();
-equalizeCardHeights();
 renderResults('');
