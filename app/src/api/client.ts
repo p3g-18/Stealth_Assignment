@@ -2,10 +2,6 @@ import type { EventDetail, EventFilters, EventsPage } from './types';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 
-/**
- * Any failed request. `status` is the HTTP status, or null when the request
- * never got a response (offline, server down, CORS).
- */
 export class ApiError extends Error {
   readonly status: number | null;
 
@@ -15,7 +11,6 @@ export class ApiError extends Error {
     this.status = status;
   }
 
-  /** 5xx, 429 and network failures may succeed on retry; other 4xx will not. */
   get retryable(): boolean {
     return this.status === null || this.status === 429 || this.status >= 500;
   }
@@ -26,13 +21,12 @@ async function request<T>(path: string, signal?: AbortSignal): Promise<T> {
   try {
     response = await fetch(BASE_URL + path, { signal });
   } catch (err) {
-    // Cancelled on purpose: let the caller (React Query) see the AbortError.
+    // aborted by us, not a network failure
     if (signal?.aborted) throw err;
     throw new ApiError('Could not reach the server. Check your connection.', null);
   }
 
   if (!response.ok) {
-    // The API sends { "error": "..." }; fall back to the status text if not.
     const body = await response.json().catch(() => null);
     const message = typeof body?.error === 'string' ? body.error : response.statusText;
     throw new ApiError(message || `Request failed (${response.status})`, response.status);

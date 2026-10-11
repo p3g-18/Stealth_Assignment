@@ -1,6 +1,5 @@
 import { EventList } from './components/EventList';
 
-// Filters arrive with the search/filter step; until then, show everything.
 const NO_FILTERS = {};
 
 export default function App() {

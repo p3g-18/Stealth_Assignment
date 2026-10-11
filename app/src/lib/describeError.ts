@@ -5,7 +5,6 @@ export interface ErrorDescription {
   detail: string;
 }
 
-/** Turns any thrown value into words a user can act on. */
 export function describeError(error: unknown): ErrorDescription {
   if (error instanceof ApiError) {
     if (error.status === null) {
@@ -23,7 +22,6 @@ export function describeError(error: unknown): ErrorDescription {
     if (error.status === 404) {
       return { title: 'Not found', detail: error.message };
     }
-    // Other 4xx: the API's own message says what was wrong with the request.
     return { title: 'The request was rejected', detail: error.message };
   }
   return {

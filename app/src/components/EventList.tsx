@@ -6,7 +6,6 @@ import { useDelayedFlag } from '../lib/useDelayedFlag';
 import { EventTable } from './EventTable';
 import { ErrorMessage, SlowNotice, StatusMessage, buttonClass } from './StatusMessage';
 
-/** Responses from this API usually take under a second. */
 const SLOW_AFTER_MS = 1000;
 
 interface EventListProps {
@@ -32,12 +31,9 @@ export function EventList({ filters }: EventListProps) {
   const total = data?.pages[0]?.total ?? 0;
 
   const isSlow = useDelayedFlag(isFetching, SLOW_AFTER_MS);
-  // failureCount > 0 while fetching means React Query is between retries.
   const isRetrying = isFetching && failureCount > 0;
 
-  // Load the next page when the user scrolls near the end of the table.
-  // After a failed page we stop, so a broken API isn't hammered; the user
-  // retries with the button instead.
+  // don't keep auto-loading after a failed page
   const sentinelRef = useRef<HTMLDivElement>(null);
   const canAutoLoad = hasNextPage && !isFetchingNextPage && !isFetchNextPageError;
 
@@ -84,7 +80,6 @@ export function EventList({ filters }: EventListProps) {
 
   return (
     <section aria-label="Events">
-      {/* Announced politely to screen readers as more rows arrive. */}
       <p className="mb-2 text-muted" role="status">
         Showing {formatCount(events.length)} of {formatCount(total)} events
       </p>

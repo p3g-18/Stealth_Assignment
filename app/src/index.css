@@ -1,10 +1,5 @@
 @import 'tailwindcss';
 
-/*
- * Design tokens. Each `--color-*` here becomes Tailwind utilities, e.g.
- * `--color-muted` → `text-muted`, `bg-muted`, `border-muted`.
- * Kept as CSS variables so dark mode can later swap values in one place.
- */
 @theme {
   --color-bg: #ffffff;
   --color-subtle: #f6f7f9;

@@ -13,7 +13,6 @@ interface StatusMessageProps {
   tone?: 'neutral' | 'error';
 }
 
-/** Centered message used for empty and error states. */
 export function StatusMessage({ title, children, action, tone = 'neutral' }: StatusMessageProps) {
   return (
     <div
@@ -34,7 +33,6 @@ interface ErrorMessageProps {
 
 export function ErrorMessage({ error, onRetry }: ErrorMessageProps) {
   const { title, detail } = describeError(error);
-  // No button when retrying can't help, e.g. a 400 for a bad filter value.
   const retryable = !(error instanceof ApiError) || error.retryable;
   return (
     <StatusMessage
@@ -53,7 +51,6 @@ export function ErrorMessage({ error, onRetry }: ErrorMessageProps) {
   );
 }
 
-/** Shown under a loading indicator once a request is slower than usual. */
 export function SlowNotice({ retrying }: { retrying: boolean }) {
   return (
     <p className="text-muted">

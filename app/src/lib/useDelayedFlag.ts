@@ -1,9 +1,5 @@
 import { useEffect, useState } from 'react';
 
-/**
- * True only once `active` has stayed true for `delayMs`. Used to show a
- * "taking longer than usual" hint without flashing it on fast responses.
- */
 export function useDelayedFlag(active: boolean, delayMs: number): boolean {
   const [elapsed, setElapsed] = useState(false);
 
