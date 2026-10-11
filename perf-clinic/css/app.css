@@ -123,6 +123,7 @@ main {
 
 .alerts {
   position: relative;
+  container-type: inline-size;
   height: 40px;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -133,7 +134,7 @@ main {
 .alerts-track {
   position: absolute;
   top: 8px;
-  left: 100%;
+  left: 0;
   display: flex;
   gap: 48px;
   white-space: nowrap;
@@ -145,12 +146,13 @@ main {
   font-size: 14px;
 }
 
+/* transform runs on the compositor; animating `left` forced a layout every frame */
 @keyframes alerts-scroll {
   from {
-    left: 100%;
+    transform: translateX(100cqw);
   }
   to {
-    left: -120%;
+    transform: translateX(-120cqw);
   }
 }
 
