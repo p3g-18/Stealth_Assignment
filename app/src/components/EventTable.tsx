@@ -13,11 +13,13 @@ const td = 'border-b border-line px-3 py-2 whitespace-nowrap';
 
 interface EventTableProps {
   events: EventSummary[];
+  /** Placeholder rows shown while the first page loads. */
+  skeletonRows?: number;
 }
 
-export function EventTable({ events }: EventTableProps) {
+export function EventTable({ events, skeletonRows = 0 }: EventTableProps) {
   return (
-    <table className="w-full border-collapse">
+    <table className="w-full border-collapse" aria-busy={skeletonRows > 0}>
       <thead>
         <tr>
           <th scope="col" className={th}>Timestamp</th>
@@ -46,7 +48,28 @@ export function EventTable({ events }: EventTableProps) {
             <td className={`${td} text-right tabular-nums`}>{formatLatency(event.latencyMs)}</td>
           </tr>
         ))}
+        {Array.from({ length: skeletonRows }, (_, i) => (
+          <SkeletonRow key={i} />
+        ))}
       </tbody>
     </table>
+  );
+}
+
+// Grey bars the size of real content, so the layout doesn't jump when data
+// arrives. The pulse is skipped for users who prefer reduced motion.
+const SKELETON_WIDTHS = ['w-36', 'w-28', 'w-24', 'w-10', 'w-14'];
+
+function SkeletonRow() {
+  return (
+    <tr aria-hidden="true">
+      {SKELETON_WIDTHS.map((width, i) => (
+        <td key={i} className={td}>
+          <div
+            className={`h-4 rounded bg-line motion-safe:animate-pulse ${width} ${i === 4 ? 'ml-auto' : ''}`}
+          />
+        </td>
+      ))}
+    </tr>
   );
 }
