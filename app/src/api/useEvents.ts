@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 import { fetchEvents } from './client';
 import type { EventFilters } from './types';
 
@@ -11,5 +11,6 @@ export function useEvents(filters: EventFilters) {
       fetchEvents(filters, { cursor: pageParam, limit: PAGE_SIZE, signal }),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    placeholderData: keepPreviousData,
   });
 }

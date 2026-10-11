@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { EventFilters } from '../api/types';
 import { useEvents } from '../api/useEvents';
+import { hasFilters } from '../lib/filters';
 import { formatCount } from '../lib/format';
 import { useDelayedFlag } from '../lib/useDelayedFlag';
 import { EventTable } from './EventTable';
@@ -10,15 +11,17 @@ const SLOW_AFTER_MS = 1000;
 
 interface EventListProps {
   filters: EventFilters;
+  onClearFilters: () => void;
 }
 
-export function EventList({ filters }: EventListProps) {
+export function EventList({ filters, onClearFilters }: EventListProps) {
   const {
     data,
     error,
     isPending,
     isError,
     isFetching,
+    isPlaceholderData,
     failureCount,
     refetch,
     fetchNextPage,
@@ -35,7 +38,8 @@ export function EventList({ filters }: EventListProps) {
 
   // don't keep auto-loading after a failed page
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const canAutoLoad = hasNextPage && !isFetchingNextPage && !isFetchNextPageError;
+  const canAutoLoad =
+    hasNextPage && !isFetchingNextPage && !isFetchNextPageError && !isPlaceholderData;
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -71,20 +75,41 @@ export function EventList({ filters }: EventListProps) {
   }
 
   if (events.length === 0) {
-    return (
-      <StatusMessage title="No events found">
-        There are no events for this view yet.
+    return hasFilters(filters) ? (
+      <StatusMessage
+        title="No events match your filters"
+        action={
+          <button type="button" className={buttonClass} onClick={onClearFilters}>
+            Clear filters
+          </button>
+        }
+      >
+        Try a different search, or widen the agent and status filters.
       </StatusMessage>
+    ) : (
+      <StatusMessage title="No events yet">Events will show up here as agents call tools.</StatusMessage>
     );
   }
 
   return (
     <section aria-label="Events">
       <p className="mb-2 text-muted" role="status">
-        Showing {formatCount(events.length)} of {formatCount(total)} events
+        {isPlaceholderData
+          ? 'Updating results…'
+          : `Showing ${formatCount(events.length)} of ${formatCount(total)} events`}
       </p>
+      {isPlaceholderData && isSlow && (
+        <div className="mb-2">
+          <SlowNotice retrying={isRetrying} />
+        </div>
+      )}
 
-      <EventTable events={events} />
+      <div
+        aria-busy={isPlaceholderData}
+        className={`transition-opacity motion-reduce:transition-none ${isPlaceholderData ? 'opacity-50' : ''}`}
+      >
+        <EventTable events={events} />
+      </div>
 
       <div ref={sentinelRef} className="flex flex-col items-center gap-2 px-4 py-6 text-center text-muted">
         {isFetchingNextPage && (
@@ -101,7 +126,7 @@ export function EventList({ filters }: EventListProps) {
             Load more
           </button>
         )}
-        {!hasNextPage && <p>You’ve reached the end — all {formatCount(total)} events shown.</p>}
+        {!hasNextPage && !isPlaceholderData && <p>You’ve reached the end — all {formatCount(total)} events shown.</p>}
       </div>
     </section>
   );
